@@ -1,4 +1,5 @@
 const { Shops, Products, Users } = require("../models");
+const { Op, where } = require("sequelize");
 
 const createShop = async (req, res) => {
   const { name, adminEmail, userId } = req.body;
@@ -23,21 +24,21 @@ const createShop = async (req, res) => {
     if (error.name === "SequelizeValidationError") {
       const errorMessage = error.errors.map((err) => err.message);
       return res.status(400).json({
-        status: "Fail",
+        status: "Failed",
         message: errorMessage[0],
         isSuccess: false,
         data: null,
       });
     } else if (error.name === "SequelizeDatabaseError") {
       return res.status(400).json({
-        status: "Fail",
+        status: "Failed",
         message: error.message || "Database error",
         isSuccess: false,
         data: null,
       });
     } else {
       res.status(500).json({
-        status: "Fail",
+        status: "Failed",
         message: "An unexpected error occurred",
         isSuccess: false,
         data: null,
@@ -48,12 +49,44 @@ const createShop = async (req, res) => {
 
 const getAllShop = async (req, res) => {
   try {
-    const shops = await Shops.findAll({
+    // 1. Kita jaga req.query biar gak kemana-mana
+    const {
+      shopName,
+      adminEmail,
+      productName,
+      stock,
+      page = 1,
+      limit = 10,
+    } = req.query;
+    const condition = {};
+
+    if (shopName) {
+      condition.name = {
+        [Op.iLike]: `%${shopName}%`,
+      };
+    }
+
+    const productCondition = {};
+
+    if (productName) {
+      productCondition.name = {
+        [Op.iLike]: `%${productName}%`,
+      };
+    }
+    if (stock) {
+      productCondition.stock = stock;
+    }
+
+
+    const offset = (page - 1) * limit;
+
+    const shops = await Shops.findAndCountAll({
       include: [
         {
           model: Products,
           as: "products",
-          attributes: ["name", "images"],
+          attributes: ["name", "images", "stock", "price"],
+          where: productCondition,
         },
         {
           model: Users,
@@ -61,15 +94,25 @@ const getAllShop = async (req, res) => {
           attributes: ["name"],
         },
       ],
-      attributes: ["name", "adminEmail"],
+      attributes: ["id", "name", "adminEmail"],
+      where: condition,
+      limit: limit,
+      offset: offset,
     });
+
+    const totalData = shops.count;
+
+    const totalPages = Math.ceil(totalData / limit);
 
     res.status(200).json({
       status: "Success",
       message: "Success get shops data",
       isSuccess: true,
       data: {
-        shops,
+        totalData,
+        totalPages,
+        currentPage: page,
+        shops: shops.rows,
       },
     });
   } catch (error) {
