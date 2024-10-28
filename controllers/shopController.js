@@ -55,7 +55,8 @@ const getAllShop = async (req, res) => {
       adminEmail,
       productName,
       stock,
-      page = 1,
+      size,
+      page,
       limit = 10,
     } = req.query;
     const condition = {};
@@ -76,10 +77,29 @@ const getAllShop = async (req, res) => {
     if (stock) {
       productCondition.stock = stock;
     }
+    
 
+    const userCondition = {}; 
+    if(userName) {userCondition.name={[Op.iLike]: `%${userName}`}};
 
-    const offset = (page - 1) * limit;
+    const pageSize = parseInt(size) || 10;
+    const pageNum = parseInt(page) || 1;
+    const offset = (pageNum - 1) * pageSize;
 
+    const totalCount = await Shops.count({
+      include : [
+        {
+          model:Products,
+          as: "pruducts",
+          where:productCondition,
+        },
+        {
+          model:Users,
+          as: "user",
+          where:userCondition,
+        }
+      ]
+    });
     const shops = await Shops.findAndCountAll({
       include: [
         {
@@ -91,7 +111,7 @@ const getAllShop = async (req, res) => {
         {
           model: Users,
           as: "user",
-          attributes: ["name"],
+          where: userCondition,
         },
       ],
       attributes: ["id", "name", "adminEmail"],
@@ -99,10 +119,10 @@ const getAllShop = async (req, res) => {
       limit: limit,
       offset: offset,
     });
-
+    
     const totalData = shops.count;
 
-    const totalPages = Math.ceil(totalData / limit);
+    const totalPages = Math.ceil(totalData / pageSize);
 
     res.status(200).json({
       status: "Success",
