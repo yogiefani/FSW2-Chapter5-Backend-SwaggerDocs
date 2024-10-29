@@ -1,0 +1,149 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Invoice API",
+      "description": "API for managing invoices",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "https://api.example.com/v1"
+      }
+    ],
+    "paths": {
+      "/invoices": {
+        "get": {
+          "summary": "List all invoices",
+          "description": "Retrieve a list of all invoices",
+          "responses": {
+            "200": {
+              "description": "A list of invoices",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Invoice"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Create a new invoice",
+          "description": "Create a new invoice with the provided details",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Invoice created successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Invoice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/invoices/{id}": {
+        "get": {
+          "summary": "Get invoice by ID",
+          "description": "Retrieve a single invoice by its unique ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Invoice details",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Invoice"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "Invoice not found"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete invoice by ID",
+          "description": "Delete a single invoice by its unique ID",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Invoice deleted successfully"
+            },
+            "404": {
+              "description": "Invoice not found"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Invoice": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier for the invoice"
+            },
+            "amount": {
+              "type": "number",
+              "format": "float",
+              "description": "Total amount of the invoice"
+            },
+            "client": {
+              "type": "string",
+              "description": "Name of the client"
+            },
+            "status": {
+              "type": "string",
+              "enum": ["pending", "paid", "overdue"],
+              "description": "Status of the invoice"
+            },
+            "due_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Due date for the invoice"
+            }
+          },
+          "required": ["id", "amount", "client", "status", "due_date"]
+        }
+      }
+    }
+  }
+  
